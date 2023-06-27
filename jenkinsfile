@@ -1,7 +1,12 @@
 pipeline { 
     agent any
+    
     tools { 
-        gradle "Gradle-6"
+        nodejs "20.3.1"
+    }
+    
+    environment{
+        APP_LINK = 'https://heroku-gallery-3471579183e9.herokuapp.com/'
     }
     
     stages { 
@@ -11,10 +16,30 @@ pipeline {
           }
         }
         
+        stage('Install node modules') {
+            steps { 
+                sh 'npm i'
+            }
+        }
+        
+        stage('Deploy to Heroku') {
+            steps {
+                withCredentials([usernameColonPassword(credentialsId: 'heroku', variable: 'HEROKU_CREDENTIALS' )]){
+                    sh 'git push https://${HEROKU_CREDENTIALS}@git.heroku.com/heroku-gallery.git master'
+                }
+            }
+        }
+        
+        stage('Tests') {
+            steps { 
+                sh 'npm run test'
+            }
+        }
+        
         stage('integration to slack'){
             steps {
-                slackSend message: "Build number ${BUILD_NUMBER} | Job Name - ${JENKINS_URL}"
-                slackSend color: 'good', message: 'This is awesome!'
+                slackSend message: "Build number ${BUILD_NUMBER} | Job Name - ${JENKINS_URL} | Application Link: ${APP_LINK}"
+                slackSend color: 'good', message: 'The gallery was deployed successfully and is running okay!'
             }
         }
     }
