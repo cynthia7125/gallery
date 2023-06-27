@@ -6,7 +6,7 @@ pipeline {
     }
     
     environment{
-        APP_LINK = 'https://heroku-gallery-3471579183e9.herokuapp.com/'
+        APP_LINK = 'https://arcane-mountain-78765-54e042f045f6.herokuapp.com/'
     }
     
     stages { 
@@ -22,17 +22,38 @@ pipeline {
             }
         }
         
-        stage('Deploy to Heroku') {
+        stage('Test') {
             steps {
-                withCredentials([usernameColonPassword(credentialsId: 'heroku', variable: 'HEROKU_CREDENTIALS' )]){
-                    sh 'git push https://${HEROKU_CREDENTIALS}@git.heroku.com/heroku-gallery.git master'
+                script {
+                    def testResult = sh returnStatus: true, script: 'npm run test' 
+
+                    if (testResult != 0) {
+                        emailext(
+                            subject: "Failing tests",
+                            body: "Tests have been run and have failed",
+                            recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                            to: "reyhana.kibet@student.moringaschool.com"
+                        )
+                    }
                 }
             }
         }
         
-        stage('Tests') {
-            steps { 
-                sh 'npm run test'
+        stage('Deploy to Heroku') {
+            steps {
+                script {
+                    def herokuApp = 'arcane-mountain-78765' 
+                    
+                    withCredentials([[
+                        $class: 'UsernamePasswordMultiBinding',
+                        credentialsId: 'heroku',
+                        usernameVariable: 'HEROKU_USERNAME',
+                        passwordVariable: 'HEROKU_API_KEY'
+                    ]]) {
+                        sh "heroku login --username $HEROKU_USERNAME --password $HEROKU_API_KEY"
+                        sh "git push https://git.heroku.com/$herokuApp.git HEAD:master"
+                    }
+                }
             }
         }
         
