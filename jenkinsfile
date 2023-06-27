@@ -6,7 +6,7 @@ pipeline {
     }
     
     environment{
-        APP_LINK = 'https://arcane-mountain-78765-54e042f045f6.herokuapp.com/'
+        APP_LINK = 'https://gallery-deploy.onrender.com'
     }
     
     stages { 
@@ -39,28 +39,17 @@ pipeline {
             }
         }
         
-        stage('Deploy to Heroku') {
+        stage('DEPLOYMENT') {
             steps {
-                script {
-                    def herokuApp = 'arcane-mountain-78765' 
-                    
-                    withCredentials([[
-                        $class: 'UsernamePasswordMultiBinding',
-                        credentialsId: 'heroku',
-                        usernameVariable: 'HEROKU_USERNAME',
-                        passwordVariable: 'HEROKU_API_KEY'
-                    ]]) {
-                        sh "heroku login --username $HEROKU_USERNAME --password $HEROKU_API_KEY"
-                        sh "git push https://git.heroku.com/$herokuApp.git HEAD:master"
-                    }
-                }
+                slackSend message: "Link to render deployment: https://gallery-deploy.onrender.com"
             }
         }
+        
         
         stage('integration to slack'){
             steps {
                 slackSend message: "Build number ${BUILD_NUMBER} | Job Name - ${JENKINS_URL} | Application Link: ${APP_LINK}"
-                slackSend color: 'good', message: 'The gallery was deployed successfully and is running okay!'
+                slackSend color: 'good', message: 'The gallery was deployed successfully on render and is running okay!'
             }
         }
     }
